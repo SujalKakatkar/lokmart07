@@ -13,6 +13,10 @@ import ProtectRoleSelection from "../components/ProtectRoleSelection";
 import CartPage from "../pages/CartPage";
 import CheckoutPage from "../pages/CheckoutPage";
 import OrdersPage from "../pages/OrdersPage";
+import ProtectAdmin from "../components/ProtectAdmin";
+import ProtectPages from "../components/ProtectPages";
+import ProtectedShopDashboard from "../components/ProtectedShopDashboard";
+import NotFound from "../pages/NotFound";
 
 export const routes = createBrowserRouter([
     {
@@ -29,7 +33,9 @@ export const routes = createBrowserRouter([
             },
             {
                 path: "shopDashboard",
-                element: <ShopDashboard />
+                element: <ProtectedShopDashboard>
+                    <ShopDashboard />
+                </ProtectedShopDashboard>
             },
             {
                 path: "requestshop",
@@ -39,13 +45,19 @@ export const routes = createBrowserRouter([
             },
             {
                 path: "/cartitem",
-                element: <CartPage />
+                element: <ProtectPages>
+                    <CartPage />
+                </ProtectPages>
             }, {
                 path: "/checkout",
-                element:<CheckoutPage/>
+                element: <ProtectPages>
+                    <CheckoutPage />
+                </ProtectPages>
             }, {
                 path: "/orders",
-                element:<OrdersPage/>
+                element: <ProtectPages>
+                    <OrdersPage />
+                </ProtectPages>
             }
         ]
     },
@@ -70,6 +82,12 @@ export const routes = createBrowserRouter([
     },
     {
         path: "/admin",
-        element: <Admin />
+        element: <ProtectAdmin>
+            <Admin />
+        </ProtectAdmin>
+    },
+    {
+        path: "*",
+        element:<NotFound/>
     }
 ])
