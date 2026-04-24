@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 function SignIn() {
 
   const { user, handleLogin } = useAuth()
+  const [error, setError] = useState(null)
   const navigate = useNavigate()
   const [data, setData] = useState({
     email: "",
@@ -18,9 +19,12 @@ function SignIn() {
     e.preventDefault()
 
     try {
-      await handleLogin(data.email, data.password)
+      const res = await handleLogin(data.email, data.password)
+      if(res) {
+        setError(res)
+      }
 
-      navigate("/")
+      // navigate("/")
 
     } catch(error) {
       console.log(error)
@@ -35,15 +39,7 @@ function SignIn() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-accent/10 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2" />
 
       <div className="max-w-md w-full relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-brand-primary rounded-xl group-hover:rotate-12 transition-transform">
-              <ShoppingBag className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">LokMart</span>
-          </Link>
-        </div>
+        {/* Logo */}  
 
         {/* Card */}
         <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-slate-200/50 border border-slate-100">
@@ -51,6 +47,8 @@ function SignIn() {
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
             <p className="text-slate-500">Simplify your local shopping experience</p>
           </div>
+
+          {error && <p className='text-center text-red-600'>{error}</p>}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">

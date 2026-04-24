@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 
 function SignUp() {
   const { user, handleSignup } = useAuth()
+  const [error, setError] = useState(null)
   const navigate = useNavigate()
   const [data, setData] = useState({
     name: "",
@@ -17,11 +18,10 @@ function SignUp() {
     e.preventDefault()
 
     try {
-      await handleSignup(data.name, data.email, data.password)
-
-      console.log(user);
-
-      navigate("/")
+      const res = await handleSignup(data.name, data.email, data.password)
+      if(res) {
+        setError(res)
+      }
 
     } catch(error) {
       console.log(error)
@@ -53,6 +53,8 @@ function SignUp() {
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Create Account</h1>
             <p className="text-slate-500">Join the local marketplace community</p>
           </div>
+
+          {error && <p className='text-center text-red-600'>{error}</p>}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">

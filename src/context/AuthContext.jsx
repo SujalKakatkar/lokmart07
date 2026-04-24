@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
             .select("*")
             .eq("id", userid)
             .maybeSingle();
-        
+
         if(error) {
             console.error("PROFILE ERROR:", error.message);
         }
@@ -28,17 +28,6 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const handleRoleChange = async (role) => {
-        if(role.trim() == "") return
-
-        const { data, error } = await supabase.from("profiles").update({ role }).eq("id", user.id)
-
-        if(error) console.log(error);
-        console.log(data);
-
-        setLoading(false)
-
-    }
 
     useEffect(() => {
         const { data: listener } = supabase.auth.onAuthStateChange(
@@ -57,15 +46,20 @@ export const AuthProvider = ({ children }) => {
     const handleSignup = async (name, email, password) => {
         setLoading(true);
 
+        if(!name.trim() || !email.trim() || !password.trim()) {
+            setLoading(false);
+            return "All fields are required";
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
         });
 
         if(error) {
-            alert(error.message);
+
             setLoading(false);
-            return;
+            return error.message
         }
 
         const user = data?.user;
@@ -103,7 +97,7 @@ export const AuthProvider = ({ children }) => {
             email,
             password,
         })
-        if(error) alert(error.message)
+        if(error) return error.message
         if(data.user) setUser(data.user)
         setLoading(false)
     }
@@ -114,7 +108,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, loading, handleLogin, handleSignup, handleLogout, fetchProfile, handleRoleChange }}>
+        <AuthContext.Provider value={{ user, loading, handleLogin, handleSignup, handleLogout, fetchProfile }}>
             {children}
         </AuthContext.Provider>
     )

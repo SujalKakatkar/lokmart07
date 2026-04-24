@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -12,11 +13,15 @@ export default function ProductsPage() {
     message: "",
   });
   const { user } = useAuth()
+  const navigate = useNavigate()
 
 
   const addToCart = async (product) => {
 
-    if(!(user && product)) return
+    if(!(user && product)) {
+      navigate("/auth/signin")
+      return
+    }
 
 
     const { data, error } = await supabase.from("cart").insert([
@@ -63,7 +68,7 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  
+
 
   // Search handler
   const handleSearch = (value) => {

@@ -1,38 +1,49 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Navigate } from 'react-router'
-import { useEffect } from 'react';
-import { useState } from 'react';
 
 function ProtectRoleSelection({ children }) {
     const [shopOwner, setShopOwner] = useState(false)
-    const { user, loading } = useAuth()
-    
-    if(!user) {
-        return <Navigate to="/auth/signin" replace />;
-    }
+    const [checkingRole, setCheckingRole] = useState(true)
+
+    const { user, loading, fetchProfile } = useAuth()
 
     useEffect(() => {
-
         const getRole = async () => {
             if(!user) return
-            const data = await fetchProfile(user.id);
-            if(data) {
-                if(data.role === "shopowner") setShopOwner(true)
-            }
-        }
-        getRole()
 
+            const data = await fetchProfile(user.id)
+
+            
+            if(data?.role === "shopowner") {
+                setShopOwner(true)
+            }
+
+            setCheckingRole(false) // ✅ important
+        }
+
+        getRole()
     }, [user])
 
+    // ⛔ Wait for auth
+    if(loading) return <div>Loading...</div>
 
-    if(shopOwner) return <Navigate to="/auth/signin" replace />;
+    // ⛔ Not logged in
+    if(!user) {
+        return <Navigate to="/auth/signin" replace />
+    }
 
-    if(loading) return <div>loding...</div>
+    // ⛔ Wait for role check
+    if(checkingRole) {
+        return <div>Checking role...</div>
+    }
 
-    return (
-        children
-    )
+    // ✅ Redirect if already shop owner
+    if(shopOwner) {
+        return <Navigate to="/shopDashboard" replace />
+    }
+
+    return children
 }
 
 export default ProtectRoleSelection

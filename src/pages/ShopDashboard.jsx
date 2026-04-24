@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import { Delete } from "lucide-react";
-import { DeleteIcon } from "lucide-react";
 import { Trash } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ShopDashboard() {
   const { user } = useAuth();
@@ -11,6 +10,7 @@ export default function ShopDashboard() {
   const [shop, setShop] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     name: "",
@@ -57,7 +57,7 @@ export default function ShopDashboard() {
       .upload(fileName, file);
 
     if(error) {
-      console.error("Upload error:", error.message);
+      toast.error("Image upload failed");
       return null;
     }
 
@@ -68,9 +68,35 @@ export default function ShopDashboard() {
     return data.publicUrl;
   };
 
+  // ✅ Validation
+  const validateForm = () => {
+    let newErrors = {};
+
+    if(!form.name.trim()) {
+      newErrors.name = "Product name is required";
+    }
+
+    if(!form.price || Number(form.price) <= 0) {
+      newErrors.price = "Enter a valid price";
+    }
+
+    if(!form.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // ➕ Add product
   const handleAddProduct = async (e) => {
     e.preventDefault();
+
+    if(!validateForm()) {
+      toast.error("Please fix the errors");
+      return;
+    }
+
     setLoading(true);
 
     let imageUrl = "";
@@ -90,61 +116,67 @@ export default function ShopDashboard() {
     setLoading(false);
 
     if(!error) {
+      toast.success("Product added 🚀");
+
       setForm({
         name: "",
         price: "",
         description: "",
         image: null,
       });
+
+      setErrors({});
       fetchProducts(shop.id);
     } else {
-      console.error(error.message);
+      toast.error(error.message);
     }
   };
 
+  // 🗑 Delete product
   const handleDeleteProduct = async (product) => {
-    const confirmDelete = confirm("Delete this product?");
+    const confirmDelete = window.confirm("Delete this product?");
     if(!confirmDelete) return;
 
-    // 🧹 extract file path from URL
     let filePath = null;
 
     if(product.image_url) {
       const parts = product.image_url.split("/product_images/");
-      filePath = parts[1]; // filename
+      filePath = parts[1];
     }
 
-    // 🗑 delete from storage first
     if(filePath) {
       const { error: storageError } = await supabase.storage
         .from("product_images")
         .remove([filePath]);
 
       if(storageError) {
-        console.error("Storage delete error:", storageError.message);
+        console.error(storageError.message);
       }
     }
 
-    // 🗑 delete from DB
     const { error } = await supabase
       .from("products")
       .delete()
       .eq("id", product.id);
 
     if(error) {
-      console.error("Delete error:", error.message);
+      toast.error("Delete failed");
     } else {
+      toast.success("Product deleted 🗑");
       fetchProducts(shop.id);
     }
   };
 
   if(!shop) {
-    return <div className="p-6 text-center text-gray-500">No shop found</div>;
+    return (
+      <div className="p-6 text-center text-gray-500">
+        No shop found
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-
       <div className="max-w-5xl mx-auto">
 
         {/* 🏪 Header */}
@@ -153,33 +185,44 @@ export default function ShopDashboard() {
           <p className="text-gray-500 text-2xl">{shop.address}</p>
         </div>
 
-        {/* ➕ Add Product Card */}
+        {/* ➕ Add Product */}
         <div className="bg-white p-6 rounded-2xl shadow mb-8">
           <h2 className="text-lg font-semibold mb-4">Add Product</h2>
 
           <form onSubmit={handleAddProduct} className="grid gap-4 md:grid-cols-2">
 
-            <input
-              placeholder="Product Name"
-              className="border p-3 rounded-xl"
-              value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
-              required
-            />
+            {/* Name */}
+            <div>
+              <input
+                placeholder="Product Name"
+                className="border p-3 rounded-xl w-full"
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
+            </div>
 
-            <input
-              type="number"
-              placeholder="Price"
-              className="border p-3 rounded-xl"
-              value={form.price}
-              onChange={(e) =>
-                setForm({ ...form, price: e.target.value })
-              }
-              required
-            />
+            {/* Price */}
+            <div>
+              <input
+                type="number"
+                placeholder="Price"
+                className="border p-3 rounded-xl w-full"
+                value={form.price}
+                onChange={(e) =>
+                  setForm({ ...form, price: e.target.value })
+                }
+              />
+              {errors.price && (
+                <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+              )}
+            </div>
 
+            {/* Image */}
             <input
               type="file"
               accept="image/*"
@@ -189,15 +232,24 @@ export default function ShopDashboard() {
               }
             />
 
-            <textarea
-              placeholder="Description"
-              className="border p-3 rounded-xl md:col-span-2"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-            />
+            {/* Description */}
+            <div className="md:col-span-2">
+              <textarea
+                placeholder="Description"
+                className="border p-3 rounded-xl w-full"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+              {errors.description && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.description}
+                </p>
+              )}
+            </div>
 
+            {/* Submit */}
             <button
               disabled={loading}
               className="bg-black text-white py-3 rounded-xl hover:opacity-90 transition md:col-span-2"
@@ -219,9 +271,8 @@ export default function ShopDashboard() {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white group  relative rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
+                  className="bg-white group relative rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
                 >
-
                   {product.image_url && (
                     <img
                       src={product.image_url}
@@ -231,7 +282,7 @@ export default function ShopDashboard() {
 
                   <button
                     onClick={() => handleDeleteProduct(product)}
-                    className="absolute top-2 right-2 bg-red-500/90 backdrop-blur text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                    className="absolute top-2 right-2 bg-red-500/90 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hover:scale-110"
                   >
                     <Trash size={16} />
                   </button>
