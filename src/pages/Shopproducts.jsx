@@ -51,15 +51,28 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*");
-
+        .select(`
+          *,
+          shops (
+            name
+          )
+        `);
+          
       if (error) {
         console.error(error);
         return;
       }
 
-      setProducts(data);
-      setFiltered(data);
+      // Flatten the data to include shop_name from joined shops table
+      const flattened = data.map(p => ({
+        ...p,
+        shop_name: p.shops?.name || "Unknown Shop"
+      }));
+      
+      
+
+      setProducts(flattened);
+      setFiltered(flattened);
     };
 
     fetchProducts();
@@ -98,6 +111,16 @@ export default function ProductsPage() {
     setFiltered([item]);
     setSuggestions([]);
   };
+
+  // Group products by shop name
+  const groupedProducts = filtered.reduce((acc, product) => {
+    const shopName = product.shop_name || "Other Shops";
+    if (!acc[shopName]) {
+      acc[shopName] = [];
+    }
+    acc[shopName].push(product);
+    return acc;
+  }, {});
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -138,59 +161,77 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* PRODUCTS GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {filtered.length > 0 ? (
-          filtered.map((product) => (
-            <div
-              key={product.id}
-              className="bg-card rounded-xl p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 group flex flex-col"
-            >
-              <div className="h-40 bg-bgSoft rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                ) : (
-                  <span className="text-textMuted font-medium">No Image</span>
-                )}
-                <div className="absolute top-2 left-2 bg-card/90 backdrop-blur-sm text-primary text-xs font-bold px-2 py-1 rounded-lg">
-                  {product.shop_name}
+      {/* PRODUCTS BY SHOP */}
+      <div className="space-y-12">
+        {Object.keys(groupedProducts).length > 0 ? (
+          Object.entries(groupedProducts).map(([shopName, shopProducts]) => (
+            <div key={shopName} className="space-y-6">
+              {/* Shop Title Header */}
+              <div className="relative pt-4">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-4xl font-black text-textPrimary tracking-tighter uppercase">
+                    {shopName}
+                  </h2>
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+                  <p className="text-sm font-bold text-textSecondary uppercase tracking-widest ml-auto">
+                    {shopProducts.length} Items Available
+                  </p>
                 </div>
+                <div className="w-full h-px bg-gradient-to-r from-primary/50 via-bgSoft to-transparent mt-2"></div>
               </div>
 
-              <div className="flex flex-col flex-1">
-                <h3 className="font-bold text-lg text-textPrimary line-clamp-1 mb-1">
-                  {product.name}
-                </h3>
-                
-                <div className="flex items-center gap-1.5 mb-4">
-                  <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                  <p className="text-xs text-textSecondary font-medium">
-                    Local App
-                  </p>
-                </div>
+              {/* Product Grid for this Shop */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {shopProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-card rounded-xl p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 group flex flex-col"
+                  >
+                    <div className="h-40 bg-bgSoft rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <span className="text-textMuted font-medium">No Image</span>
+                      )}
+                    </div>
 
-                <div className="mt-auto flex items-center justify-between">
-                  <p className="font-extrabold text-textPrimary text-xl">
-                    ₹{product.price}
-                  </p>
-                </div>
-                
-                <button
-                  onClick={() => addToCart(product)}
-                  className="mt-4 w-full bg-primary text-white font-medium py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 100 4 2 2 0 000-4z"></path></svg>
-                  Add to Cart
-                </button>
+                    <div className="flex flex-col flex-1">
+                      <h3 className="font-bold text-lg text-textPrimary line-clamp-1 mb-1">
+                        {product.name}
+                      </h3>
+                      
+                      <div className="flex items-center gap-1.5 mb-4">
+                        <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                        <p className="text-xs text-textSecondary font-medium">
+                          {product.is_available ? "Available" : "Not Availabe"}
+                        </p>
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between">
+                        <p className="font-extrabold text-textPrimary text-xl">
+                          ₹{product.price}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="mt-4 w-full bg-primary text-white font-medium py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 100 4 2 2 0 000-4z"></path></svg>
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-full py-20 text-center flex flex-col items-center">
+          <div className="py-20 text-center flex flex-col items-center">
             <div className="w-16 h-16 bg-bgSoft rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>

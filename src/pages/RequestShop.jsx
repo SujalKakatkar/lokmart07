@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { Store, MapPin, Phone, ArrowRight, Clock, XCircle, Store as StoreIcon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -15,6 +16,13 @@ export default function RequestSeller() {
     address: "",
     phone: "",
   });
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+    if (value.length <= 10) {
+      setForm({ ...form, phone: value });
+    }
+  };
 
   // fetch request
   const fetchRequest = async () => {
@@ -44,6 +52,11 @@ export default function RequestSeller() {
 
     if (request) {
       console.log("the request already exists");
+      return;
+    }
+
+    if (form.phone.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number");
       return;
     }
 
@@ -117,9 +130,11 @@ export default function RequestSeller() {
                   <Phone className="w-5 h-5" />
                 </div>
                 <input
-                  placeholder="+91"
+                  placeholder="Enter 10-digit number"
+                  value={form.phone}
                   className="w-full pl-11 pr-4 py-4 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted"
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={handlePhoneChange}
+                  maxLength="10"
                   required
                 />
               </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router";
-import { CreditCard, Calendar, Lock, ShieldCheck, CheckCircle2, Smartphone, IndianRupee } from "lucide-react";
+import { CreditCard, Calendar, Lock, ShieldCheck, CheckCircle2, Smartphone, IndianRupee, MapPin, Phone } from "lucide-react";
 
 export default function CheckoutPage() {
     const { user } = useAuth();
@@ -15,6 +16,47 @@ export default function CheckoutPage() {
     
     // Payment Method State
     const [paymentMethod, setPaymentMethod] = useState("phonepe"); // "phonepe" or "card"
+
+    // Shipping Info State
+    const [phone, setPhone] = useState("");
+    const [address, setAddress] = useState("");
+    const [isProfilePresent, setIsProfilePresent] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+
+    const handlePhoneChange = (e) => {
+        const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+        if (value.length <= 10) {
+            setPhone(value);
+        }
+    };
+
+    // 👤 Fetch Profile (for pre-filling phone and address)
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchProfile = async () => {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("mobile_number, address")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error fetching profile:", error);
+                return;
+            }
+
+            if (data) {
+                setPhone(data.mobile_number || "");
+                setAddress(data.address || "");
+                if (data.mobile_number && data.address) {
+                    setIsProfilePresent(true);
+                }
+            }
+        };
+
+        fetchProfile();
+    }, [user]);
 
     // 📦 Fetch Cart
     useEffect(() => {
@@ -51,7 +93,32 @@ export default function CheckoutPage() {
     const handlePayment = async () => {
         if (!cartItems.length) return;
 
+        // 📱 Validation
+        if (phone.length !== 10) {
+            toast.error("Please enter a valid 10-digit mobile number");
+            return;
+        }
+
+        if (!address.trim()) {
+            toast.error("Please enter your delivery address");
+            return;
+        }
+
         setLoading(true);
+
+        // 0. Update Profile with Mobile and Address
+        const { error: profileUpdateError } = await supabase
+            .from("profiles")
+            .update({
+                mobile_number: phone,
+                address: address
+            })
+            .eq("id", user.id);
+
+        if (profileUpdateError) {
+            console.error("Profile update error:", profileUpdateError);
+            // We continue even if profile update fails, but maybe show a warning?
+        }
 
         // 1. Create Order
         const { data: orderData, error: orderError } = await supabase
@@ -178,7 +245,95 @@ export default function CheckoutPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={e => { e.preventDefault(); handlePayment(); }} className="space-y-4">
+                            <form onSubmit={e => { e.preventDefault(); handlePayment(); }} className="space-y-6">
+                                
+                                {/* Shipping Details */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-sm font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-primary" /> Delivery Details
+                                        </h3>
+                                        {isProfilePresent && !editMode && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => setEditMode(true)}
+                                                className="text-xs font-bold text-primary hover:underline transition-all"
+                                            >
+                                                Change
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {isProfilePresent && !editMode ? (
+                                        <div className="bg-bgSoft/50 p-4 rounded-xl border border-bgSoft space-y-3 animate-fade-in">
+                                            <div className="flex items-start gap-3">
+                                                <MapPin className="w-4 h-4 text-textMuted mt-0.5" />
+                                                <p className="text-sm text-textPrimary font-medium leading-relaxed">
+                                                    {address}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Phone className="w-4 h-4 text-textMuted" />
+                                                <p className="text-sm text-textPrimary font-bold">
+                                                    +91 {phone}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 animate-fade-in">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-textSecondary ml-1">Mobile Number</label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-textMuted">
+                                                        <Phone className="w-4 h-4" />
+                                                    </div>
+                                                    <input
+                                                        type="tel"
+                                                        placeholder="Enter 10-digit mobile number"
+                                                        value={phone}
+                                                        onChange={handlePhoneChange}
+                                                        maxLength="10"
+                                                        className="w-full pl-11 pr-4 py-3 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-textSecondary ml-1">Delivery Address</label>
+                                                <div className="relative">
+                                                    <div className="absolute top-3 left-4 text-textMuted">
+                                                        <MapPin className="w-4 h-4" />
+                                                    </div>
+                                                    <textarea
+                                                        placeholder="Enter your full address with landmark"
+                                                        value={address}
+                                                        onChange={(e) => setAddress(e.target.value)}
+                                                        rows="3"
+                                                        className="w-full pl-11 pr-4 py-3 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted resize-none"
+                                                        required
+                                                    ></textarea>
+                                                </div>
+                                            </div>
+                                            
+                                            {isProfilePresent && editMode && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setEditMode(false)}
+                                                    className="w-full py-2 text-xs font-bold text-textSecondary bg-bgSoft/50 rounded-lg hover:bg-bgSoft transition-all"
+                                                >
+                                                    Cancel Editing
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="border-t border-bgSoft pt-4">
+                                    <h3 className="text-sm font-bold text-textPrimary uppercase tracking-wider flex items-center gap-2 mb-4">
+                                        <CreditCard className="w-4 h-4 text-primary" /> Payment Method
+                                    </h3>
+                                </div>
                                 
                                 {paymentMethod === "phonepe" && (
                                     <div className="animate-fade-in">
