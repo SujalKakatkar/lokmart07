@@ -3,7 +3,7 @@ import {Outlet} from 'react-router'
 
 function Authlayout() {
   return (
-    <div>
+    <div className="min-h-screen bg-global text-textPrimary">
       <Outlet/>
     </div>
   )

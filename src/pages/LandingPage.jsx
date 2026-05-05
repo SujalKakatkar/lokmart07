@@ -73,7 +73,7 @@ function LandingPage() {
 
           <h1 className="text-5xl lg:text-7xl font-extrabold text-white tracking-tight mb-6">
             Your Local Market, <br />
-              Now Online
+            Now Online
           </h1>
 
           <p className="text-xl text-gray-200 max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -142,7 +142,7 @@ function LandingPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="relative rounded-[40px] bg-slate-900 overflow-hidden py-16 px-8 md:px-16 text-center lg:text-left flex flex-col lg:flex-row items-center justify-between gap-12">
             <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-primary/20 blur-[120px] rounded-full translate-x-1/2" />
-            
+
             <div className="relative z-10 lg:max-w-xl">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to bring your shop online?</h2>
               <p className="text-slate-400 text-lg mb-8">Join thousands of local sellers growing their business with LokMart. Zero commission for the first 3 months.</p>
@@ -167,7 +167,7 @@ function LandingPage() {
                 </div>
                 <div className="text-slate-300 italic mb-4">"LokMart increased our sales by 40% in just two months. The direct chat feature is a game changer!"</div>
                 <div className="flex gap-1">
-                  {[1,2,3,4,5].map(i => <Zap key={i} className="w-4 h-4 fill-brand-primary text-brand-primary" />)}
+                  {[1, 2, 3, 4, 5].map(i => <Zap key={i} className="w-4 h-4 fill-brand-primary text-brand-primary" />)}
                 </div>
               </div>
             </div>
@@ -188,7 +188,7 @@ function LandingPage() {
               </div>
               <p className="text-slate-500 leading-relaxed">Connecting local people with local shops. Supporting neighborhood commerce in the digital age.</p>
             </div>
-            
+
             <div>
               <h4 className="font-bold text-slate-900 mb-6">Explore</h4>
               <ul className="space-y-4">
@@ -222,9 +222,9 @@ function LandingPage() {
           <div className="pt-8 border-t border-slate-200 flex flex-col md:row items-center justify-between gap-4">
             <p className="text-slate-500 text-sm">© {new Date().getFullYear()} LokMart. Crafted for local communities.</p>
             <div className="flex gap-6">
-                <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">Twitter</a>
-                <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">Instagram</a>
-                <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">LinkedIn</a>
+              <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">Twitter</a>
+              <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">Instagram</a>
+              <a href="#" className="text-slate-400 hover:text-brand-primary transition-colors">LinkedIn</a>
             </div>
           </div>
         </div>
