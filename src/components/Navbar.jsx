@@ -15,9 +15,9 @@ function Navbar() {
   useEffect(() => {
 
     const getRole = async () => {
-      if(!user) return
+      if (!user) return
       const data = await fetchProfile(user.id);
-      if(data) {
+      if (data) {
         setRole(data.role)
       }
     }
@@ -26,65 +26,68 @@ function Navbar() {
   }, [user])
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b bg-white border-slate-100 px-4 md:px-8 py-4">
+    <nav className="sticky top-0 z-50 bg-card shadow-md px-4 md:px-8 py-4 transition-all duration-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="text-2xl font-bold text-slate-900 tracking-tight">LokMart</span>
+          <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-all duration-200">
+            <ShoppingBag className="w-6 h-6 text-primary" />
+          </div>
+          <span className="text-2xl font-bold text-textPrimary tracking-tight">LokMart</span>
         </Link>
 
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          <button className="p-2.5 text-slate-500 hover:text-brand-primary transition-colors bg-slate-50 rounded-xl md:hidden">
+          <button className="p-2.5 text-textSecondary hover:text-primary transition-all duration-200 bg-bgSoft rounded-xl md:hidden">
             <Search className="w-5 h-5" />
           </button>
 
           {/* base on the user please change the navitems */}
           {user ? (
             <div className="hidden sm:flex items-center gap-2">
-              <Link to="/requestshop" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
-                start sales
+              <Link to="/requestshop" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+                Start Selling
               </Link>
 
-              {role === "admin" && <Link to="/admin" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
-                admin
+              {role === "admin" && <Link to="/admin" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+                Admin
               </Link>}
 
-              {role === "customer" && <Link to="/shopes" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
-                shopes
+              {role === "customer" && <Link to="/shopes" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+                Shops
               </Link>}
 
-              {role === "customer" && <Link to="/orders" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
-                orders
+              {role === "customer" && <Link to="/orders" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+                Orders
               </Link>}
 
-              {role === "customer" && <Link to="/cartitem" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
-                cart
+              {role === "customer" && <Link to="/cartitem" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+                Cart
               </Link>}
 
               <button
                 onClick={handleLogout}
-                className="px-6 py-2.5 bg-brand-primary  rounded-xl font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-accent hover:-translate-y-0.5 transition-all active:scale-95"
+                className="px-6 py-2.5 bg-bgSoft text-textPrimary hover:bg-primary hover:text-white rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2"
               >
-                <LogOut />
+                <LogOut className="w-4 h-4" /> Logout
               </button>
             </div>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
-              <Link to="/auth/signin" className="px-6 py-2.5 text-slate-600 hover:text-brand-primary font-bold transition-colors">
+              <Link to="/auth/signin" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
                 Login
               </Link>
               <Link
                 to="/auth/signup"
-                className="px-6 py-2.5 bg-brand-primary  rounded-xl font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-accent hover:-translate-y-0.5 transition-all active:scale-95"
+                className="px-6 py-2.5 bg-primary text-white rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
               >
                 Get Started
               </Link>
             </div>
           )}
 
-          <button className="md:hidden p-2.5 text-slate-600 bg-slate-50 rounded-xl">
+          <button className="md:hidden p-2.5 text-textSecondary bg-bgSoft rounded-xl">
             <Menu className="w-6 h-6" />
           </button>
         </div>

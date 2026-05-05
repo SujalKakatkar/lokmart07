@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext'
 
 function Landinglayout() {
     const {  loading } = useAuth()
-    if(loading) return <div>Loading...</div>
+    if(loading) return <div className="min-h-screen bg-global flex items-center justify-center text-textSecondary font-medium">Loading...</div>
     return (
-        <div>
+        <div className="min-h-screen bg-global text-textPrimary">
             <Navbar />
             <Outlet />
         </div>
