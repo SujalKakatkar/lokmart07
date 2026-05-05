@@ -18,7 +18,11 @@ export default function ProductsPage() {
 
   const addToCart = async (product) => {
 
-    if(!(user && product)) return
+    if (!user) {
+      navigate("/auth/signin");
+      return;
+    }
+    if (!product) return;
 
 
     const { data, error } = await supabase.from("cart").insert([
