@@ -39,19 +39,7 @@ function SignIn() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/10 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
       <div className="max-w-md w-full relative z-10">
-<<<<<<< HEAD
-        {/* Logo */}  
-=======
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-all duration-200">
-              <ShoppingBag className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-2xl font-bold text-textPrimary tracking-tight group-hover:text-primary transition-all duration-200">LokMart</span>
-          </Link>
-        </div>
->>>>>>> 2d6f309fe4792d94af8d3ca89dab796abe490f36
+
 
         {/* Card */}
         <div className="bg-card rounded-xl p-10 shadow-md border border-bgSoft">
