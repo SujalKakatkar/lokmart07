@@ -15,15 +15,15 @@ function Navbar() {
   useEffect(() => {
 
     const getRole = async () => {
-      if (!user) return
+      if(!user) return
       const data = await fetchProfile(user.id);
-      if (data) {
+      if(data) {
         setRole(data.role)
       }
     }
     getRole()
 
-  }, [user])
+  }, [user, fetchProfile])
 
   return (
     <nav className="sticky top-0 z-50 bg-card shadow-md px-4 md:px-8 py-4 transition-all duration-200">
