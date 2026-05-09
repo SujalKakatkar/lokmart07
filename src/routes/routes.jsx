@@ -6,7 +6,7 @@ import Admin from "../pages/Admin";
 import Shopproducts from "../pages/Shopproducts";
 import ShopDashboard from "../pages/ShopDashboard";
 import SignUp from "../pages/SignUp";
-import SignIn from "../pages/signin";
+import SignIn from "../pages/signIn";
 import ProtectedAuth from "../components/ProtectedAuth";
 import RequestSeller from "../pages/RequestShop";
 import ProtectRoleSelection from "../components/ProtectRoleSelection";
