@@ -6,7 +6,6 @@ import Admin from "../pages/Admin";
 import Shopproducts from "../pages/Shopproducts";
 import ShopDashboard from "../pages/ShopDashboard";
 import SignUp from "../pages/SignUp";
-import SignIn from "../pages/signIn";
 import ProtectedAuth from "../components/ProtectedAuth";
 import RequestSeller from "../pages/RequestShop";
 import ProtectRoleSelection from "../components/ProtectRoleSelection";
@@ -17,6 +16,7 @@ import ProtectAdmin from "../components/ProtectAdmin";
 import ProtectPages from "../components/ProtectPages";
 import ProtectedShopDashboard from "../components/ProtectedShopDashboard";
 import NotFound from "../pages/NotFound";
+import SignIn from '../pages/SignIn'
 
 export const routes = createBrowserRouter([
     {
