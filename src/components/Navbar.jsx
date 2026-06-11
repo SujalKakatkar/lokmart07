@@ -46,9 +46,11 @@ function Navbar() {
           {/* base on the user please change the navitems */}
           {user ? (
             <div className="hidden sm:flex items-center gap-2">
-              <Link to="/requestshop" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
+              {
+                role !== "admin" && <Link to="/requestshop" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
                 Start Selling
               </Link>
+              }
 
               {role === "admin" && <Link to="/admin" className="px-6 py-2.5 text-textPrimary hover:text-primary font-medium transition-all duration-200">
                 Admin

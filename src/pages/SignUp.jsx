@@ -1,12 +1,13 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ShoppingBag, Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { ShoppingBag, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 function SignUp() {
   const { user, handleSignup } = useAuth()
   const [error, setError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
   const [data, setData] = useState({
     name: "",
@@ -94,11 +95,18 @@ function SignUp() {
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   onChange={(e) => setData(prev => ({ ...prev, password: e.target.value }))}
                   placeholder="Minimum 8 characters"
-                  className="w-full pl-11 pr-4 py-4 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted"
+                  className="w-full pl-11 pr-11 py-4 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-textMuted hover:text-primary transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 

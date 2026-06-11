@@ -1,8 +1,28 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowRight, ShoppingBag, MessageCircle, Truck, Zap, ShoppingCart, Apple, Smartphone, Shirt, Home, Pill, LayoutGrid } from 'lucide-react'
 import { Link } from 'react-router'
+import { useAuth } from '../context/AuthContext'
 
 function LandingPage() {
+
+  const [role, setRole] = useState(null)
+
+  const { user, fetchProfile } = useAuth()
+
+
+  useEffect(() => {
+
+    const getRole = async () => {
+      if (!user) return
+      const data = await fetchProfile(user.id);
+      if (data) {
+        setRole(data.role)
+      }
+    }
+    getRole()
+
+  }, [user, fetchProfile])
+
   const features = [
     {
       title: "Nearby Shops",
@@ -81,13 +101,23 @@ function LandingPage() {
           </p>
 
           <div className="flex items-center justify-center gap-4">
-            <Link to="/shopes" className="px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all flex items-center gap-2">
-              Explore Shops <ArrowRight className="w-5 h-5" />
-            </Link>
+            {
+              (!user || role === "customer") && <Link to="/shopes" className="px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all flex items-center gap-2">
+                Explore Shops <ArrowRight className="w-5 h-5" />
+              </Link>
+            }
+            {
+              role === "admin" && <Link to="/admin" className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all">
+                Dashboard
+              </Link>
+            }
 
-            <Link to="/requestshop" className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all">
-              Start Selling
-            </Link>
+
+            {
+              role !== "admin" && <Link to="/requestshop" className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold rounded-2xl hover:bg-white/20 transition-all">
+                Start Selling
+              </Link>
+            }
           </div>
         </div>
       </section>

@@ -72,16 +72,48 @@ export default function ShopDashboard() {
   const validateForm = () => {
     let newErrors = {};
 
-    if(!form.name.trim()) {
+    // Name Validation
+    const nameVal = form.name.trim();
+    if (!nameVal) {
       newErrors.name = "Product name is required";
+    } else if (nameVal.length < 3) {
+      newErrors.name = "Product name must be at least 3 characters long";
+    } else if (nameVal.length > 100) {
+      newErrors.name = "Product name cannot exceed 100 characters";
     }
 
-    if(!form.price || Number(form.price) <= 0) {
-      newErrors.price = "Enter a valid price";
+    // Price Validation
+    const priceVal = form.price.toString().trim();
+    if (!priceVal) {
+      newErrors.price = "Price is required";
+    } else {
+      const priceNum = Number(priceVal);
+      if (isNaN(priceNum)) {
+        newErrors.price = "Price must be a valid number";
+      } else if (priceNum < 0) {
+        newErrors.price = "Price cannot be negative";
+      } else if (priceNum === 0) {
+        newErrors.price = "Price must be greater than 0";
+      }
     }
 
-    if(!form.description.trim()) {
+    // Description Validation
+    const descVal = form.description.trim();
+    if (!descVal) {
       newErrors.description = "Description is required";
+    } else if (descVal.length < 10) {
+      newErrors.description = "Description must be at least 10 characters long";
+    } else if (descVal.length > 1000) {
+      newErrors.description = "Description cannot exceed 1000 characters";
+    }
+
+    // Image Validation (if selected)
+    if (form.image) {
+      if (!form.image.type.startsWith("image/")) {
+        newErrors.image = "Please select a valid image file (JPEG, PNG, etc.)";
+      } else if (form.image.size > 5 * 1024 * 1024) {
+        newErrors.image = "Image size must be less than 5MB";
+      }
     }
 
     setErrors(newErrors);
@@ -107,8 +139,8 @@ export default function ShopDashboard() {
 
     const { error } = await supabase.from("products").insert({
       shop_id: shop.id,
-      name: form.name,
-      description: form.description,
+      name: form.name.trim(),
+      description: form.description.trim(),
       price: Number(form.price),
       image_url: imageUrl,
     });
@@ -176,74 +208,99 @@ export default function ShopDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50/70 via-emerald-50/40 to-green-50/70 p-6">
       <div className="max-w-5xl mx-auto">
 
         {/* 🏪 Header */}
-        <div className="mb-8 flex flex-col items-center justify-center h-80">
-          <h1 className="text-5xl font-bold">{shop.name}</h1>
-          <p className="text-gray-500 text-2xl">{shop.address}</p>
+        <div className="mb-8 bg-white/70 backdrop-blur-md border border-green-100/80 p-8 rounded-3xl shadow-sm flex flex-col justify-center relative overflow-hidden animate-fade-in">
+          {/* A soft glowing green background sphere */}
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-green-200/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10">
+            <span className="bg-green-100 text-green-850 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+              Shop Owner Dashboard
+            </span>
+            <h1 className="text-4xl font-extrabold text-green-950 mt-3 tracking-tight">{shop.name}</h1>
+            <p className="text-emerald-800/80 text-lg mt-1 flex items-center gap-1">
+              📍 {shop.address}
+            </p>
+          </div>
         </div>
 
         {/* ➕ Add Product */}
-        <div className="bg-white p-6 rounded-2xl shadow mb-8">
-          <h2 className="text-lg font-semibold mb-4">Add Product</h2>
+        <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl border border-green-100 shadow-sm mb-8 animate-fade-in">
+          <h2 className="text-xl font-bold text-green-950 mb-6 flex items-center gap-2">
+            <span className="p-2 bg-green-100 text-green-700 rounded-xl">➕</span>
+            Add New Product
+          </h2>
 
-          <form onSubmit={handleAddProduct} className="grid gap-4 md:grid-cols-2">
+          <form onSubmit={handleAddProduct} className="grid gap-5 md:grid-cols-2">
 
             {/* Name */}
             <div>
               <input
                 placeholder="Product Name"
-                className="border p-3 rounded-xl w-full"
+                className="border border-green-200/80 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 p-3.5 rounded-xl w-full bg-white/70 outline-none transition-all placeholder:text-green-800/40 text-green-950 font-medium"
                 value={form.name}
                 onChange={(e) =>
                   setForm({ ...form, name: e.target.value })
                 }
               />
               {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                <p className="text-red-500 text-sm mt-1.5 font-medium">{errors.name}</p>
               )}
             </div>
 
             {/* Price */}
             <div>
               <input
-                type="number"
+                type="text"
                 placeholder="Price"
-                className="border p-3 rounded-xl w-full"
+                className="border border-green-200/80 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 p-3.5 rounded-xl w-full bg-white/70 outline-none transition-all placeholder:text-green-800/40 text-green-950 font-medium"
                 value={form.price}
-                onChange={(e) =>
-                  setForm({ ...form, price: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Strip negative signs and allow only digits and decimal point
+                  const sanitized = val.replace(/-/g, "").replace(/[^0-9.]/g, "");
+                  // Ensure only one decimal point is allowed
+                  const parts = sanitized.split(".");
+                  const finalVal = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join("")}` : sanitized;
+                  setForm({ ...form, price: finalVal });
+                }}
               />
               {errors.price && (
-                <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                <p className="text-red-500 text-sm mt-1.5 font-medium">{errors.price}</p>
               )}
             </div>
 
             {/* Image */}
-            <input
-              type="file"
-              accept="image/*"
-              className="border p-3 rounded-xl md:col-span-2"
-              onChange={(e) =>
-                setForm({ ...form, image: e.target.files[0] })
-              }
-            />
+            <div className="md:col-span-2">
+              <input
+                type="file"
+                accept="image/*"
+                className="border border-green-200/80 file:bg-green-50 file:border-0 file:text-green-700 file:font-semibold file:px-4 file:py-2 file:rounded-lg file:mr-4 file:cursor-pointer p-2.5 rounded-xl w-full bg-white/70 outline-none transition-all text-green-800/70 cursor-pointer"
+                onChange={(e) =>
+                  setForm({ ...form, image: e.target.files[0] || null })
+                }
+              />
+              {errors.image && (
+                <p className="text-red-500 text-sm mt-1.5 font-medium">{errors.image}</p>
+              )}
+            </div>
 
             {/* Description */}
             <div className="md:col-span-2">
               <textarea
                 placeholder="Description"
-                className="border p-3 rounded-xl w-full"
+                className="border border-green-200/80 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 p-3.5 rounded-xl w-full bg-white/70 outline-none transition-all placeholder:text-green-800/40 text-green-950 font-medium min-h-[100px]"
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
               />
               {errors.description && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-500 text-sm mt-1.5 font-medium">
                   {errors.description}
                 </p>
               )}
@@ -252,7 +309,7 @@ export default function ShopDashboard() {
             {/* Submit */}
             <button
               disabled={loading}
-              className="bg-black text-white py-3 rounded-xl hover:opacity-90 transition md:col-span-2"
+              className="bg-green-600 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 hover:shadow-lg hover:shadow-green-600/15 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all md:col-span-2 cursor-pointer"
             >
               {loading ? "Adding..." : "Add Product"}
             </button>
@@ -261,37 +318,42 @@ export default function ShopDashboard() {
         </div>
 
         {/* 📦 Products */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Products</h2>
+        <div className="animate-fade-in">
+          <h2 className="text-xl font-bold text-green-950 mb-6 flex items-center gap-2">
+            <span className="p-2 bg-green-100 text-green-700 rounded-xl">📦</span>
+            Products
+          </h2>
 
           {products.length === 0 ? (
-            <p className="text-gray-500">No products yet</p>
+            <div className="bg-white/50 border border-green-100 rounded-2xl p-12 text-center text-green-800/60">
+              No products yet
+            </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white group relative rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
+                  className="bg-white/90 group relative rounded-2xl border border-green-50 shadow-sm hover:shadow-md hover:border-green-200/85 transition-all duration-300 overflow-hidden"
                 >
                   {product.image_url && (
                     <img
                       src={product.image_url}
-                      className="h-40 w-full object-cover"
+                      className="h-40 w-full object-cover group-hover:scale-102 transition-transform duration-300"
                     />
                   )}
 
                   <button
                     onClick={() => handleDeleteProduct(product)}
-                    className="absolute top-2 right-2 bg-red-500/90 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hover:scale-110"
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md cursor-pointer"
                   >
                     <Trash size={16} />
                   </button>
 
-                  <div className="p-3">
-                    <h3 className="font-semibold text-sm">
+                  <div className="p-4 bg-white">
+                    <h3 className="font-bold text-green-950 text-sm line-clamp-1">
                       {product.name}
                     </h3>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-green-700 font-semibold text-sm mt-1.5">
                       ₹{product.price}
                     </p>
                   </div>
