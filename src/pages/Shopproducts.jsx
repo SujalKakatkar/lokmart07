@@ -98,25 +98,80 @@ export default function ProductsPage() {
 
     const lower = value.toLowerCase();
 
-    const results = products.filter((p) => {
-      return (
-        p.name?.toLowerCase().includes(lower) ||
-        p.shop_name?.toLowerCase().includes(lower) ||
-        p.shop_address?.toLowerCase().includes(lower)
-      );
-    });
+    // Find all shop names/addresses that match the query
+    const matchingShopNames = new Set(
+      products
+        .filter(
+          (p) =>
+            p.shop_name?.toLowerCase().includes(lower) ||
+            p.shop_address?.toLowerCase().includes(lower)
+        )
+        .map((p) => p.shop_name)
+    );
+
+    // Include ALL products from matched shops + products matched by name
+    const results = products.filter(
+      (p) =>
+        matchingShopNames.has(p.shop_name) ||
+        p.name?.toLowerCase().includes(lower)
+    );
 
     setFiltered(results);
 
-    // top 5 suggestions
-    setSuggestions(results.slice(0, 5));
+    // Build typed suggestions: shops → locations → products
+    const shopSuggestions = [];
+    const locationSuggestions = [];
+    const productSuggestions = [];
+    const seenShops = new Set();
+    const seenLocations = new Set();
+
+    for (const p of products) {
+      if (p.shop_name?.toLowerCase().includes(lower) && !seenShops.has(p.shop_name)) {
+        seenShops.add(p.shop_name);
+        shopSuggestions.push({
+          type: "shop",
+          label: p.shop_name,
+          sublabel: p.shop_address,
+          shop_name: p.shop_name,
+        });
+      }
+      if (p.shop_address?.toLowerCase().includes(lower) && !seenLocations.has(p.shop_address)) {
+        seenLocations.add(p.shop_address);
+        locationSuggestions.push({
+          type: "location",
+          label: p.shop_address,
+          sublabel: `${products.filter(x => x.shop_address === p.shop_address).length} shop(s) nearby`,
+          address: p.shop_address,
+        });
+      }
+      if (p.name?.toLowerCase().includes(lower)) {
+        productSuggestions.push({
+          type: "product",
+          label: p.name,
+          sublabel: p.shop_name,
+          product: p,
+        });
+      }
+    }
+
+    setSuggestions(
+      [...shopSuggestions, ...locationSuggestions, ...productSuggestions].slice(0, 7)
+    );
   };
 
-  // select suggestion
+  // Select suggestion — shows ALL products from a shop/location, or just the one product
   const handleSelectSuggestion = (item) => {
-    setSearch(item.name);
-    setFiltered([item]);
+    setSearch(item.label);
     setSuggestions([]);
+
+    if (item.type === "shop") {
+      setFiltered(products.filter((p) => p.shop_name === item.shop_name));
+    } else if (item.type === "location") {
+      setFiltered(products.filter((p) => p.shop_address === item.address));
+    } else {
+      // product — show only that product
+      setFiltered([item.product]);
+    }
   };
 
   // Group products by shop name
@@ -152,20 +207,42 @@ export default function ProductsPage() {
         {/* Suggestions */}
         {suggestions.length > 0 && (
           <div className="absolute w-full bg-card border border-bgSoft mt-2 rounded-xl shadow-lg z-20 overflow-hidden">
-            {suggestions.map((item) => (
+            {suggestions.map((item, idx) => (
               <div
-                key={item.id}
+                key={`${item.type}-${idx}`}
                 onClick={() => handleSelectSuggestion(item)}
-                className="p-4 hover:bg-bgSoft cursor-pointer border-b border-bgSoft last:border-0 transition-all duration-200"
+                className="p-4 hover:bg-bgSoft cursor-pointer border-b border-bgSoft last:border-0 transition-all duration-200 flex items-start gap-3"
               >
-                <p className="font-medium text-textPrimary">{item.name}</p>
-                <p className="text-sm text-textSecondary">{item.shop_name}</p>
-                {item.shop_address && (
-                  <p className="text-xs text-textMuted flex items-center gap-1 mt-0.5">
-                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {item.shop_address}
-                  </p>
-                )}
+                {/* Type icon */}
+                <div className="mt-0.5 shrink-0">
+                  {item.type === "shop" && (
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" points="9 22 9 12 15 12 15 22" /></svg>
+                  )}
+                  {item.type === "location" && (
+                    <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  )}
+                  {item.type === "product" && (
+                    <svg className="w-4 h-4 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-textPrimary truncate">{item.label}</p>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${
+                      item.type === "shop"
+                        ? "bg-primary/10 text-primary"
+                        : item.type === "location"
+                        ? "bg-secondary/10 text-secondary"
+                        : "bg-bgSoft text-textMuted"
+                    }`}>
+                      {item.type}
+                    </span>
+                  </div>
+                  {item.sublabel && (
+                    <p className="text-xs text-textMuted truncate mt-0.5">{item.sublabel}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
