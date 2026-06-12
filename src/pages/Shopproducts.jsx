@@ -58,7 +58,8 @@ export default function ProductsPage() {
         .select(`
           *,
           shops (
-            name
+            name,
+            address
           )
         `);
           
@@ -70,7 +71,8 @@ export default function ProductsPage() {
       // Flatten the data to include shop_name from joined shops table
       const flattened = data.map(p => ({
         ...p,
-        shop_name: p.shops?.name || "Unknown Shop"
+        shop_name: p.shops?.name || "Unknown Shop",
+        shop_address: p.shops?.address || "",
       }));
       
       
@@ -99,7 +101,8 @@ export default function ProductsPage() {
     const results = products.filter((p) => {
       return (
         p.name?.toLowerCase().includes(lower) ||
-        p.shop_name?.toLowerCase().includes(lower)
+        p.shop_name?.toLowerCase().includes(lower) ||
+        p.shop_address?.toLowerCase().includes(lower)
       );
     });
 
@@ -142,7 +145,7 @@ export default function ProductsPage() {
         <input
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Search products or shops..."
+          placeholder="Search products, shops or location..."
           className="w-full pl-12 pr-4 py-4 bg-bgSoft border-2 border-transparent focus:border-primary rounded-xl focus:outline-none transition-all duration-200 text-textPrimary font-medium placeholder:text-textMuted shadow-sm"
         />
 
@@ -156,9 +159,13 @@ export default function ProductsPage() {
                 className="p-4 hover:bg-bgSoft cursor-pointer border-b border-bgSoft last:border-0 transition-all duration-200"
               >
                 <p className="font-medium text-textPrimary">{item.name}</p>
-                <p className="text-sm text-textSecondary">
-                  {item.shop_name}
-                </p>
+                <p className="text-sm text-textSecondary">{item.shop_name}</p>
+                {item.shop_address && (
+                  <p className="text-xs text-textMuted flex items-center gap-1 mt-0.5">
+                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {item.shop_address}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -172,7 +179,7 @@ export default function ProductsPage() {
             <div key={shopName} className="space-y-6">
               {/* Shop Title Header */}
               <div className="relative pt-4">
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline gap-3 flex-wrap">
                   <h2 className="text-4xl font-black text-textPrimary tracking-tighter uppercase">
                     {shopName}
                   </h2>
@@ -181,6 +188,12 @@ export default function ProductsPage() {
                     {shopProducts.length} Items Available
                   </p>
                 </div>
+                {shopProducts[0]?.shop_address && (
+                  <p className="text-sm text-textMuted flex items-center gap-1 mt-1">
+                    <svg className="w-4 h-4 shrink-0 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {shopProducts[0].shop_address}
+                  </p>
+                )}
                 <div className="w-full h-px bg-gradient-to-r from-primary/50 via-bgSoft to-transparent mt-2"></div>
               </div>
 

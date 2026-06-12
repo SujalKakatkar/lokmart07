@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import { Trash } from "lucide-react";
+import { Trash, Pencil, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ShopDashboard() {
@@ -11,6 +11,12 @@ export default function ShopDashboard() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Edit state
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", price: "", image: null });
+  const [editErrors, setEditErrors] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -158,6 +164,100 @@ export default function ShopDashboard() {
       });
 
       setErrors({});
+      fetchProducts(shop.id);
+    } else {
+      toast.error(error.message);
+    }
+  };
+
+  // ✏️ Open edit modal
+  const handleOpenEdit = (product) => {
+    setEditingProduct(product);
+    setEditForm({ name: product.name, price: String(product.price), image: null });
+    setEditErrors({});
+  };
+
+  // ✅ Validate edit form
+  const validateEditForm = () => {
+    let newErrors = {};
+
+    const nameVal = editForm.name.trim();
+    if (!nameVal) {
+      newErrors.name = "Product name is required";
+    } else if (nameVal.length < 3) {
+      newErrors.name = "Product name must be at least 3 characters long";
+    } else if (nameVal.length > 100) {
+      newErrors.name = "Product name cannot exceed 100 characters";
+    }
+
+    const priceVal = editForm.price.toString().trim();
+    if (!priceVal) {
+      newErrors.price = "Price is required";
+    } else {
+      const priceNum = Number(priceVal);
+      if (isNaN(priceNum)) {
+        newErrors.price = "Price must be a valid number";
+      } else if (priceNum < 0) {
+        newErrors.price = "Price cannot be negative";
+      } else if (priceNum === 0) {
+        newErrors.price = "Price must be greater than 0";
+      }
+    }
+
+    if (editForm.image) {
+      if (!editForm.image.type.startsWith("image/")) {
+        newErrors.image = "Please select a valid image file (JPEG, PNG, etc.)";
+      } else if (editForm.image.size > 5 * 1024 * 1024) {
+        newErrors.image = "Image size must be less than 5MB";
+      }
+    }
+
+    setEditErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // 💾 Save edited product
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    if (!validateEditForm()) {
+      toast.error("Please fix the errors");
+      return;
+    }
+
+    setEditLoading(true);
+
+    let imageUrl = editingProduct.image_url;
+
+    if (editForm.image) {
+      // Upload new image
+      const newUrl = await uploadImage(editForm.image);
+      if (newUrl) {
+        // Remove old image from storage
+        if (editingProduct.image_url) {
+          const parts = editingProduct.image_url.split("/product_images/");
+          const oldPath = parts[1];
+          if (oldPath) {
+            await supabase.storage.from("product_images").remove([oldPath]);
+          }
+        }
+        imageUrl = newUrl;
+      }
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update({
+        name: editForm.name.trim(),
+        price: Number(editForm.price),
+        image_url: imageUrl,
+      })
+      .eq("id", editingProduct.id);
+
+    setEditLoading(false);
+
+    if (!error) {
+      toast.success("Product updated ✅");
+      setEditingProduct(null);
       fetchProducts(shop.id);
     } else {
       toast.error(error.message);
@@ -342,6 +442,15 @@ export default function ShopDashboard() {
                     />
                   )}
 
+                  {/* Edit button */}
+                  <button
+                    onClick={() => handleOpenEdit(product)}
+                    className="absolute top-2 left-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md cursor-pointer"
+                  >
+                    <Pencil size={16} />
+                  </button>
+
+                  {/* Delete button */}
                   <button
                     onClick={() => handleDeleteProduct(product)}
                     className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md cursor-pointer"
@@ -364,6 +473,109 @@ export default function ShopDashboard() {
         </div>
 
       </div>
+
+      {/* ✏️ Edit Product Modal */}
+      {editingProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(0,0,0,0.35)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingProduct(null); }}
+        >
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-green-100 w-full max-w-md animate-fade-in">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-green-50">
+              <h2 className="text-lg font-extrabold text-green-950 flex items-center gap-2">
+                <span className="p-1.5 bg-green-100 text-green-700 rounded-lg">
+                  <Pencil size={16} />
+                </span>
+                Edit Product
+              </h2>
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="p-2 rounded-full hover:bg-green-50 text-green-700 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleUpdateProduct} className="p-6 flex flex-col gap-4">
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-semibold text-green-800/70 mb-1.5 uppercase tracking-wide">Product Name</label>
+                <input
+                  placeholder="Product Name"
+                  className="border border-green-200/80 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 p-3.5 rounded-xl w-full bg-white outline-none transition-all placeholder:text-green-800/40 text-green-950 font-medium"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+                {editErrors.name && (
+                  <p className="text-red-500 text-sm mt-1.5 font-medium">{editErrors.name}</p>
+                )}
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="block text-xs font-semibold text-green-800/70 mb-1.5 uppercase tracking-wide">Price (₹)</label>
+                <input
+                  type="text"
+                  placeholder="Price"
+                  className="border border-green-200/80 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 p-3.5 rounded-xl w-full bg-white outline-none transition-all placeholder:text-green-800/40 text-green-950 font-medium"
+                  value={editForm.price}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const sanitized = val.replace(/-/g, "").replace(/[^0-9.]/g, "");
+                    const parts = sanitized.split(".");
+                    const finalVal = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join("")}` : sanitized;
+                    setEditForm({ ...editForm, price: finalVal });
+                  }}
+                />
+                {editErrors.price && (
+                  <p className="text-red-500 text-sm mt-1.5 font-medium">{editErrors.price}</p>
+                )}
+              </div>
+
+              {/* Image */}
+              <div>
+                <label className="block text-xs font-semibold text-green-800/70 mb-1.5 uppercase tracking-wide">Replace Image <span className="normal-case text-green-600/60 font-normal">(optional)</span></label>
+                {editingProduct.image_url && !editForm.image && (
+                  <div className="mb-3 rounded-xl overflow-hidden border border-green-100 h-28">
+                    <img src={editingProduct.image_url} className="w-full h-full object-cover" alt="Current" />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="border border-green-200/80 file:bg-green-50 file:border-0 file:text-green-700 file:font-semibold file:px-4 file:py-2 file:rounded-lg file:mr-4 file:cursor-pointer p-2.5 rounded-xl w-full bg-white outline-none transition-all text-green-800/70 cursor-pointer"
+                  onChange={(e) => setEditForm({ ...editForm, image: e.target.files[0] || null })}
+                />
+                {editErrors.image && (
+                  <p className="text-red-500 text-sm mt-1.5 font-medium">{editErrors.image}</p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="flex-1 py-3 rounded-xl border border-green-200 text-green-800 font-semibold hover:bg-green-50 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold hover:shadow-lg hover:shadow-green-600/15 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer"
+                >
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
