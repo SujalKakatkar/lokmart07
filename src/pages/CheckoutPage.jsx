@@ -23,11 +23,38 @@ export default function CheckoutPage() {
     const [isProfilePresent, setIsProfilePresent] = useState(false);
     const [editMode, setEditMode] = useState(false);
 
+    // Card Fields State
+    const [cardNumber, setCardNumber] = useState("");
+    const [expiry, setExpiry] = useState("");
+    const [cvv, setCvv] = useState("");
+
     const handlePhoneChange = (e) => {
         const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
         if (value.length <= 10) {
             setPhone(value);
         }
+    };
+
+    // Format card number: digits only, max 16, displayed as XXXX XXXX XXXX XXXX
+    const handleCardNumberChange = (e) => {
+        const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+        const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+        setCardNumber(formatted);
+    };
+
+    // Format expiry: auto-insert slash, restrict to MM/YY
+    const handleExpiryChange = (e) => {
+        let value = e.target.value.replace(/\D/g, "").slice(0, 4);
+        if (value.length >= 3) {
+            value = value.slice(0, 2) + "/" + value.slice(2);
+        }
+        setExpiry(value);
+    };
+
+    // CVV: digits only, max 4 (Amex uses 4, others use 3)
+    const handleCvvChange = (e) => {
+        const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+        setCvv(digits);
     };
 
     // 👤 Fetch Profile (for pre-filling phone and address)
@@ -102,6 +129,35 @@ export default function CheckoutPage() {
         if (!address.trim()) {
             toast.error("Please enter your delivery address");
             return;
+        }
+
+        // 💳 Card Validation
+        if (paymentMethod === "card") {
+            const rawCard = cardNumber.replace(/\s/g, "");
+            if (rawCard.length !== 16) {
+                toast.error("Please enter a valid 16-digit card number");
+                return;
+            }
+
+            // Expiry format & past-date check
+            const expiryRegex = /^(0[1-9]|1[0-2])\/([0-9]{2})$/;
+            if (!expiryRegex.test(expiry)) {
+                toast.error("Please enter a valid expiry date (MM/YY)");
+                return;
+            }
+            const [mm, yy] = expiry.split("/").map(Number);
+            const now = new Date();
+            const currentYear = now.getFullYear() % 100;  // 2-digit year
+            const currentMonth = now.getMonth() + 1;       // 1-indexed
+            if (yy < currentYear || (yy === currentYear && mm < currentMonth)) {
+                toast.error("Card has expired. Please use a valid card");
+                return;
+            }
+
+            if (cvv.length < 3) {
+                toast.error("Please enter a valid CVV");
+                return;
+            }
         }
 
         setLoading(true);
@@ -368,10 +424,17 @@ export default function CheckoutPage() {
                                                 </div>
                                                 <input
                                                     placeholder="XXXX XXXX XXXX XXXX"
-                                                    className="w-full pl-11 pr-4 py-3.5 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted font-mono"
+                                                    value={cardNumber}
+                                                    onChange={handleCardNumberChange}
+                                                    maxLength="19"
+                                                    inputMode="numeric"
+                                                    className="w-full pl-11 pr-4 py-3.5 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted font-mono tracking-widest"
                                                     required
                                                 />
                                             </div>
+                                            {cardNumber.replace(/\s/g, "").length > 0 && cardNumber.replace(/\s/g, "").length < 16 && (
+                                                <p className="text-xs text-red-500 ml-1 mt-1">{16 - cardNumber.replace(/\s/g, "").length} more digits needed</p>
+                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
@@ -383,6 +446,10 @@ export default function CheckoutPage() {
                                                     </div>
                                                     <input
                                                         placeholder="MM/YY"
+                                                        value={expiry}
+                                                        onChange={handleExpiryChange}
+                                                        maxLength="5"
+                                                        inputMode="numeric"
                                                         className="w-full pl-11 pr-4 py-3.5 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted font-mono"
                                                         required
                                                     />
@@ -397,7 +464,10 @@ export default function CheckoutPage() {
                                                     <input
                                                         placeholder="123"
                                                         type="password"
-                                                        maxLength="3"
+                                                        value={cvv}
+                                                        onChange={handleCvvChange}
+                                                        maxLength="4"
+                                                        inputMode="numeric"
                                                         className="w-full pl-11 pr-4 py-3.5 bg-bgSoft border border-transparent focus:bg-card focus:border-primary rounded-xl outline-none transition-all duration-200 text-textPrimary placeholder:text-textMuted font-mono"
                                                         required
                                                     />
